@@ -1,0 +1,3 @@
+import scanner
+
+scanner.scan()
