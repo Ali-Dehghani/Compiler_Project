@@ -120,11 +120,11 @@ def get_next_token():
                 state = 12
 
         elif state == 1:  # finding numbers
-            if code[pointer].isdigit():
+            if code[pointer].isdigit():     # is still a number
                 current_token_lexeme += code[pointer]
                 pointer += 1
             else:
-                if code[pointer].isalpha():
+                if code[pointer].isalpha():     # is no longer a number
                     current_token_lexeme += code[pointer]
                     error_handler(4)
                     pointer += 1
@@ -196,7 +196,7 @@ def get_next_token():
             token_generator("SYMBOL")
             current_token_lexeme = ""
             state = 0
-        elif state == 12:    # whitespace
+        elif state == 12:    # removing whitespace
             current_token_lexeme = ""
             pointer += 1
             state = 0
