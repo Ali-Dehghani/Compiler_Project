@@ -4,6 +4,8 @@ current_line = 1
 comment_line = 1
 symbol_line = 1     # symbol table file' line
 state = 0
+next_token = ['', '']
+is_next_token_available = False
 
 is_comment_open = False
 in_beginning = True  # if we are in the beginning of the token text file's line
@@ -15,7 +17,7 @@ keywords = ["break", "else", "if", "int", "repeat", "return", "until", "void"]
 identifiers = []
 symbols = [';', ':', ',', '[', ']', '(', ')', '{', '}', '+', '-', '*', '=', '<', '==']
 whitespaces = [' ', '\n', '\r', '\t', '\v', '\f']
-valid_symbols = symbols + whitespaces + ['/']
+valid_symbols = symbols + whitespaces + ['/'] + ["$"]
 
 f_input = open("input.txt", "r")
 f_tokens = open("tokens.txt", "w")
@@ -23,7 +25,7 @@ f_errors = open("lexical_errors.txt", "w")
 f_symbols = open("symbol_table.txt", "w")
 
 code = f_input.read()
-code += " "
+code += "$"
 
 
 def error_handler(error):
@@ -65,15 +67,17 @@ def id_keyword():
 
 
 def token_generator(token):
-    global in_beginning, current_token_lexeme
+    global in_beginning, current_token_lexeme, next_token, is_next_token_available
     if in_beginning:
         f_tokens.write(f"{current_line}.\t")
         in_beginning = False
     f_tokens.write(f'({token}, {current_token_lexeme}) ')
+    next_token = [token, current_token_lexeme]
+    is_next_token_available = True
 
 
 def get_next_token():
-    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment
+    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_next_token_available
     if (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
         current_token_lexeme += code[pointer]
         error_handler(1)
@@ -207,6 +211,16 @@ def get_next_token():
                 state = 0
             else:
                 state = 11
+    if (code[pointer] == '$') and (pointer == (len(code)-1)):
+        current_token_lexeme += code[pointer]
+        token_generator('$')
+        current_token_lexeme = ""
+        pointer += 1
+    if is_next_token_available:
+        is_next_token_available = False
+        return next_token
+    else:
+        return get_next_token()
 
 
 def scan():
@@ -220,3 +234,7 @@ def scan():
         error_handler(2)
     if no_error:            # no errors
         f_errors.write("There is no lexical error.")
+
+
+def get_current_line():
+    return current_line

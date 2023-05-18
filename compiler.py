@@ -1,3 +1,5 @@
-import scanner
+#Ali Dehghani 98106478
+#Erfan Sajjadi
 
-scanner.scan()
+import parser
+parser.parse()
