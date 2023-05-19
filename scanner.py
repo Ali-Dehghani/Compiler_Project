@@ -17,7 +17,7 @@ keywords = ["break", "else", "if", "int", "repeat", "return", "until", "void"]
 identifiers = []
 symbols = [';', ':', ',', '[', ']', '(', ')', '{', '}', '+', '-', '*', '=', '<', '==']
 whitespaces = [' ', '\n', '\r', '\t', '\v', '\f']
-valid_symbols = symbols + whitespaces + ['/'] + ["$"]
+valid_symbols = symbols + whitespaces + ['/']
 
 f_input = open("input.txt", "r")
 f_tokens = open("tokens.txt", "w")
@@ -25,7 +25,7 @@ f_errors = open("lexical_errors.txt", "w")
 f_symbols = open("symbol_table.txt", "w")
 
 code = f_input.read()
-code += "$"
+code += " "
 
 
 def error_handler(error):
@@ -78,12 +78,12 @@ def token_generator(token):
 
 def get_next_token():
     global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_next_token_available
-    if (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
+    if (pointer < len(code)) and (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
         current_token_lexeme += code[pointer]
         error_handler(1)
         pointer += 1
         state = 0
-    else:
+    elif pointer < len(code):
         if state == 0:  # finding the path ahead
             if code[pointer].isdigit():
                 current_token_lexeme += code[pointer]
@@ -211,10 +211,8 @@ def get_next_token():
                 state = 0
             else:
                 state = 11
-    if (code[pointer] == '$') and (pointer == (len(code)-1)):
-        current_token_lexeme += code[pointer]
+    if pointer == (len(code) - 1):
         token_generator('$')
-        current_token_lexeme = ""
         pointer += 1
     if is_next_token_available:
         is_next_token_available = False
