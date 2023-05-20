@@ -9,16 +9,27 @@ terminals = data['terminals']
 non_terminals = data['non_terminals']
 first = data['first']
 follow = data['follow']
-
+f_errors = open("syntax_errors.txt", "w")
 token = ''
 token_str = ''
 state = '0'
 halt_program = False
 get_new_token = True
 
+stack = ['']
+
 
 def match(input):
     return
+
+
+def error_handler(error_type, missing):
+    if error_type == 1:
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {token_str}\n)')
+    elif error_type == 2:
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
+    elif error_type == 3:
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
 
 
 def parse():
@@ -50,9 +61,8 @@ def H():
         D()
         C()
         return
-    elif token_str in follow['H']:
+    else:   # the epsilon move (derivative)
         return
-    # elif panic mode
 
 
 def Simple_expression_zegond():
@@ -60,7 +70,8 @@ def Simple_expression_zegond():
         Additive_expression_zegond()
         C()
         return
-    # else panic mode
+    elif token_str in follow['Simple_expression_zegond']:
+        # dzf
 
 
 def Simple_expression_prime():
@@ -68,9 +79,8 @@ def Simple_expression_prime():
         Additive_expression_prime()
         C()
         return
-    elif token_str in follow['Simple_expression_prime']:
+    else:   # the epsilon move  (derivative)
         return
-    # else panic mode
 
 
 def C():
@@ -78,9 +88,8 @@ def C():
         Relop()
         Additive_expression()
         return
-    elif token_str in follow['C']:
+    else:   # the epsilon move
         return
-    # else panic mode
 
 
 def Relop():
@@ -106,9 +115,8 @@ def Additive_expression_prime():
         Term_prime()
         D()
         return
-    elif token_str in follow['Additive_expression_prime']:
+    else:   # the epsilon move  (derivative)
         return
-    # else panic mode
 
 
 def Additive_expression_zegond():
@@ -125,9 +133,8 @@ def D():
         Term()
         D()
         return
-    elif token_str in follow['D']:
+    else:   # the epsilon move
         return
-    # else panic mode
 
 
 def Addop():
@@ -153,9 +160,8 @@ def Term_prime():
         Factor_prime()
         G()
         return
-    elif token_str in follow['Term_prime']:
+    else:   # the epsilon move  (derivative)
         return
-    # else panic mode
 
 
 def Term_zegond():
@@ -172,9 +178,8 @@ def G():
         Factor()
         G()
         return
-    elif token_str in follow['G']:
+    else:   # the epsilon move
         return
-    # else panic mode
 
 
 def Factor():
@@ -202,9 +207,8 @@ def Var_call_prime():
     elif token_str in first['Var_prime']:
         Var_prime()
         return
-    elif token_str in follow['Var_call_prime']:
+    else:   # the epsilon move  (derivative)
         return
-    # panic
 
 
 def Var_prime():
@@ -213,9 +217,8 @@ def Var_prime():
         Expression()
         match(']')
         return
-    elif token_str in follow['Var_prime']:
+    else:   # the epsilon move
         return
-    # panic
 
 
 def Factor_prime():
@@ -224,9 +227,8 @@ def Factor_prime():
         Args()
         match(')')
         return
-    elif token_str in follow['Factor_prime']:
+    else:   # the epsilon move
         return
-    # panic
 
 
 def Factor_zegond():
@@ -245,9 +247,8 @@ def Args():
     if token_str in first['Arg_list']:
         Arg_list()
         return
-    elif token_str in follow['Args']:
+    else:   # the epsilon move
         return
-    # panic
 
 
 def Arg_list():
@@ -264,6 +265,5 @@ def Arg_list_prime():
         Expression()
         Arg_list_prime()
         return
-    elif token_str in follow['Arg_list_prime']:
+    else:   # the epsilon move
         return
-    # panic
