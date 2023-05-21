@@ -228,8 +228,8 @@ def Expression_stmt():
         pass
 
 
-def Selection_stmt(token):
-    if token_str == "if"
+def Selection_stmt():
+    if token_str == "if":
         match("if")
         match("(")
         Expression()
