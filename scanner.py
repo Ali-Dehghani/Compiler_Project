@@ -2,10 +2,8 @@ pointer = 0
 current_token_lexeme = ""
 current_line = 1
 comment_line = 1
-symbol_line = 1     # symbol table file' line
+symbol_line = 1  # symbol table file' line
 state = 0
-next_token = ['', '']
-is_next_token_available = False
 
 is_comment_open = False
 in_beginning = True  # if we are in the beginning of the token text file's line
@@ -27,6 +25,10 @@ f_symbols = open("symbol_table.txt", "w")
 code = f_input.read()
 code += " "
 
+# new variables added for parser
+is_token_generated = False
+generating_token = ['', '']
+
 
 def error_handler(error):
     global comment_line, current_line, current_token_lexeme, in_beginning_error, in_beginning_error_comment, no_error
@@ -35,15 +37,15 @@ def error_handler(error):
         if in_beginning_error:
             f_errors.write(f'{current_line}.\t')
         f_errors.write(f'({current_token_lexeme}, Invalid input) ')
-    elif error == 2:    # 2) Unclosed comment
+    elif error == 2:  # 2) Unclosed comment
         if in_beginning_error_comment:
             f_errors.write(f'{comment_line}.\t')
         f_errors.write(f'({current_token_lexeme[:7]}..., Unclosed comment)')
-    elif error == 3:    # 3) Unmatched comment
+    elif error == 3:  # 3) Unmatched comment
         if in_beginning_error:
             f_errors.write(f'{current_line}.\t')
         f_errors.write(f'(*/, Unmatched comment) ')
-    elif error == 4:    # 4) Invalid number
+    elif error == 4:  # 4) Invalid number
         if in_beginning_error:
             f_errors.write(f'{current_line}.\t')
         f_errors.write(f'({current_token_lexeme}, Invalid number) ')
@@ -67,23 +69,33 @@ def id_keyword():
 
 
 def token_generator(token):
-    global in_beginning, current_token_lexeme, next_token, is_next_token_available
+    global in_beginning, current_token_lexeme
     if in_beginning:
         f_tokens.write(f"{current_line}.\t")
         in_beginning = False
     f_tokens.write(f'({token}, {current_token_lexeme}) ')
-    next_token = [token, current_token_lexeme]
-    is_next_token_available = True
+
+    # new
+    is_token_generated = True
+    generating_token = [token, current_token_lexeme]
 
 
 def get_next_token():
-    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_next_token_available
-    if (pointer < len(code)) and (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
+    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_token_generated, is_token_generated, is_token_generated
+
+    if pointer == len(code):
+        if is_comment_open:
+            error_handler(2)
+        if no_error:
+            f_errors.write("There is no lexical error.")
+        return ['$', '$']
+
+    if (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
         current_token_lexeme += code[pointer]
         error_handler(1)
         pointer += 1
         state = 0
-    elif pointer < len(code):
+    else:
         if state == 0:  # finding the path ahead
             if code[pointer].isdigit():
                 current_token_lexeme += code[pointer]
@@ -124,11 +136,11 @@ def get_next_token():
                 state = 12
 
         elif state == 1:  # finding numbers
-            if code[pointer].isdigit():     # is still a number
+            if code[pointer].isdigit():  # is still a number
                 current_token_lexeme += code[pointer]
                 pointer += 1
             else:
-                if code[pointer].isalpha():     # is no longer a number
+                if code[pointer].isalpha():  # is no longer a number
                     current_token_lexeme += code[pointer]
                     error_handler(4)
                     pointer += 1
@@ -161,76 +173,75 @@ def get_next_token():
                 error_handler(1)
                 current_token_lexeme = ""
                 state = 0
-        elif state == 6:     # checking if the comment is ending (first part)
-            if code[pointer] == '*':    # comment could be ending
+        elif state == 6:  # checking if the comment is ending (first part)
+            if code[pointer] == '*':  # comment could be ending
                 current_token_lexeme += code[pointer]
                 pointer += 1
                 state = 7
             else:
-                if code[pointer] == '\n':   # comment did not end
+                if code[pointer] == '\n':  # comment did not end
                     current_line += 1
                 current_token_lexeme += code[pointer]
                 pointer += 1
                 state = 6
-        elif state == 7:     # checking if the comment is ending (second part)
-            if code[pointer] == '/':    # comment did end
+        elif state == 7:  # checking if the comment is ending (second part)
+            if code[pointer] == '/':  # comment did end
                 is_comment_open = False
                 current_token_lexeme += code[pointer]
                 pointer += 1
                 state = 8
-            else:       # comment did not end
+            else:  # comment did not end
                 current_token_lexeme += code[pointer]
                 pointer += 1
                 state = 6
-        elif state == 8:     # clean up after comment ending
+        elif state == 8:  # clean up after comment ending
             current_token_lexeme = ""
             state = 0
-        elif state == 9:     # '=' and '==' differentiation
+        elif state == 9:  # '=' and '==' differentiation
             if code[pointer] == '=':
                 current_token_lexeme += code[pointer]
                 state = 10
             else:
                 state = 11
-        elif state == 10:    # finding '==' and other symbols (except '=' and '*')
+        elif state == 10:  # finding '==' and other symbols (except '=' and '*')
             token_generator("SYMBOL")
             current_token_lexeme = ""
             pointer += 1
             state = 0
-        elif state == 11:    # finding '=' and '*'
+        elif state == 11:  # finding '=' and '*'
             token_generator("SYMBOL")
             current_token_lexeme = ""
             state = 0
-        elif state == 12:    # removing whitespace
+        elif state == 12:  # removing whitespace
             current_token_lexeme = ""
             pointer += 1
             state = 0
-        elif state == 13:    # unmatched comment or '*' differentiation
+        elif state == 13:  # unmatched comment or '*' differentiation
             if code[pointer] == '/':
                 pointer += 1
                 error_handler(3)
                 state = 0
             else:
                 state = 11
-    if pointer == (len(code) - 1):
-        token_generator('$')
-        pointer += 1
-    if is_next_token_available:
-        is_next_token_available = False
-        return next_token
+
+    # new
+    if is_token_generated:
+        is_token_generated = False
+        return generating_token
     else:
         return get_next_token()
 
 
 def scan():
     global f_symbols, symbol_line, pointer, code, keywords, is_comment_open
-    for key in keywords:    # adding all the keywords to the symbol table
+    for key in keywords:  # adding all the keywords to the symbol table
         f_symbols.write(f'{symbol_line}.\t{key}\n')
         symbol_line += 1
     while pointer < len(code):  # main job
         get_next_token()
-    if is_comment_open:     # unclosed comment
+    if is_comment_open:  # unclosed comment
         error_handler(2)
-    if no_error:            # no errors
+    if no_error:  # no errors
         f_errors.write("There is no lexical error.")
 
 
