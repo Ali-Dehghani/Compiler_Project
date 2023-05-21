@@ -316,14 +316,12 @@ def H():
         match('=')
         Expression()
         return
-    elif token_str in (first['G'] + first['D'] + first['C']):
+    elif token_str in (first['G'] + first['D'] + first['C']) or token_str in follow['H']:  # the epsilon move (derivative)
         G()
         D()
         C()
         return
-    elif token_str in follow['H']:  # the epsilon move (derivative)
-        return
-    else:   # error type 1
+    elif token_str not in follow['H']:
         error_handler(1, token_str)
         return H()
 
@@ -342,13 +340,11 @@ def Simple_expression_zegond():
 
 
 def Simple_expression_prime():
-    if token_str in (first['Additive_expression_prime'] + first['C']):
+    if token_str in (first['Additive_expression_prime'] + first['C']) or token_str in follow['Simple_expression_prime']:  # the epsilon move  (derivative)
         Additive_expression_prime()
         C()
         return
-    elif token_str in follow['Simple_expression_prime']:  # the epsilon move  (derivative)
-        return
-    else:
+    elif token_str not in follow['Simple_expression_prime']:
         error_handler(1, token_str)
         return Simple_expression_prime()
 
@@ -375,9 +371,6 @@ def Relop():
     elif token_str in follow['Relop']:
         error_handler(2, 'Relop')
         return
-    else:
-        error_handler(3, '\'<\' or \'==\'')
-        return
 
 
 def Additive_expression():
@@ -394,11 +387,9 @@ def Additive_expression():
 
 
 def Additive_expression_prime():
-    if token_str in (first['Term_prime'] + first['D']):
+    if token_str in (first['Term_prime'] + first['D'] + follow['Additive_expression_prime']):  # the epsilon move  (derivative)
         Term_prime()
         D()
-        return
-    elif token_str in follow['Additive_expression_prime']:  # the epsilon move  (derivative)
         return
     elif token_str not in follow['Additive_expression_prime']:
         error_handler(1, token_str)
@@ -441,9 +432,6 @@ def Addop():
     elif token_str in follow['Addop']:
         error_handler(2, 'Addop')
         return
-    else:
-        error_handler(3, '\'+\' or \'-\'')
-        return
 
 
 def Term():
@@ -460,11 +448,9 @@ def Term():
 
 
 def Term_prime():
-    if token_str in (first['Factor_prime'] + first['G']):
+    if (token_str in (first['Factor_prime'] + first['G'])) or (token_str in follow['Term_prime']):  # the epsilon move  (derivative)
         Factor_prime()
         G()
-        return
-    elif token_str in follow['Term_prime']:  # the epsilon move  (derivative)
         return
     elif token_str not in follow['Term_prime']:
         error_handler(1, token_str)
@@ -524,10 +510,8 @@ def Var_call_prime():
         Args()
         match(')')
         return
-    elif token_str in first['Var_prime']:
+    elif token_str in (first['Var_prime'] + follow['Var_call_prime']):  # the epsilon move  (derivative)
         Var_prime()
-        return
-    elif token_str in follow['Var_call_prime']:  # the epsilon move  (derivative)
         return
     elif token_str not in follow['Var_call_prime']:
         error_handler(1, token_str)

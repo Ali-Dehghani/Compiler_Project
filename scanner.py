@@ -69,7 +69,7 @@ def id_keyword():
 
 
 def token_generator(token):
-    global in_beginning, current_token_lexeme
+    global in_beginning, current_token_lexeme, is_token_generated, generating_token
     if in_beginning:
         f_tokens.write(f"{current_line}.\t")
         in_beginning = False
