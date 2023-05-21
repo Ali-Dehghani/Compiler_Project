@@ -14,7 +14,8 @@ token = ''
 token_str = ''
 state = '0'
 halt_program = False
-get_new_token = True
+# get_new_token = True
+is_there_any_error = False
 
 stack = ['']
 
@@ -40,22 +41,24 @@ def match(input):
 
 
 def error_handler(error_type, missing):
+    global token_str, is_there_any_error
     if error_type == 1:
         f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {token_str}\n)')
     elif error_type == 2:
         f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
     elif error_type == 3:
         f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
+    is_there_any_error = True
+    return
 
 
 def parse():
     global terminals, non_terminals, first, follow, token, get_new_token, token_str
-    token = scanner.get_next_token()
-    if token[0] in ['KEYWORD', 'SYMBOL']:
-        token_str = token[1]
-    else:
-        token_str = token[0]
+    get_next_token()
     Program()
+    if not is_there_any_error:
+        f_errors.write(f'There is no syntax error.')
+    f_errors.close()
 
 
 def Program():
@@ -323,7 +326,8 @@ def H():
         return
     else:   # error type 1
         error_handler(1, '')
-
+        get_next_token()
+        return H()
 
 
 def Simple_expression_zegond():
@@ -333,8 +337,11 @@ def Simple_expression_zegond():
         return
     elif token_str in follow['Simple_expression_zegond']:
         error_handler(2, 'Simple_expression_zegond')
+        return
     else:
         error_handler(1, '')
+        get_next_token()
+        return Simple_expression_zegond()
 
 
 def Simple_expression_prime():
@@ -346,6 +353,8 @@ def Simple_expression_prime():
         return
     else:
         error_handler(1, '')
+        get_next_token()
+        return Simple_expression_prime()
 
 
 def C():
@@ -357,6 +366,8 @@ def C():
         return
     else:
         error_handler(1, '')
+        get_next_token()
+        return C()
 
 
 def Relop():
@@ -368,7 +379,10 @@ def Relop():
         return
     elif token_str in follow['Relop']:
         error_handler(2, 'Relop')
-    elif token_str not
+        return
+    else:
+        error_handler(3, '\'<\' or \'==\'')
+        return
 
 
 def Additive_expression():
@@ -376,7 +390,13 @@ def Additive_expression():
         Term()
         D()
         return
-    # else panic mode
+    elif token_str in follow['Additive_expression']:
+        error_handler(2, 'Additive_expression')
+        return
+    elif token_str not in follow['Additive_expression']:
+        error_handler(1, '')
+        get_next_token()
+        return Additive_expression()
 
 
 def Additive_expression_prime():
@@ -384,8 +404,12 @@ def Additive_expression_prime():
         Term_prime()
         D()
         return
-    else:  # the epsilon move  (derivative)
+    elif token_str in follow['Additive_expression_prime']:  # the epsilon move  (derivative)
         return
+    elif token_str not in follow['Additive_expression_prime']:
+        error_handler(1, '')
+        get_next_token()
+        return Additive_expression_prime()
 
 
 def Additive_expression_zegond():
@@ -393,7 +417,13 @@ def Additive_expression_zegond():
         Term_zegond()
         D()
         return
-    # else panic mode
+    elif token_str in follow['Additive_expression_zegond']:
+        error_handler(2, 'Additive_expression_zegond')
+        return
+    elif token_str not in follow['Additive_expression_zegond']:
+        error_handler(1, '')
+        get_next_token()
+        return Additive_expression_zegond()
 
 
 def D():
