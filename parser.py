@@ -28,17 +28,23 @@ def match(input):
         else:
             token_str = token[0]
     else:
-        # error
-        pass
+        error_handler(3, input)
 
 
-def error_handler(error_type, missing):
+def error_handler(error_type, input):
     if error_type == 1:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {token_str}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {input}\n)')
+        token = scanner.get_next_token()
+
+        if token[0] in ['KEYWORD', 'SYMBOL']:
+            token_str = token[1]
+        else:
+            token_str = token[0]
+
     elif error_type == 2:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
     elif error_type == 3:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
 
 
 def parse():
@@ -56,7 +62,11 @@ def Program():
         Declaration_list()
     else:
         # error
-        pass
+        if token_str not in follow["Program"]:
+            error_handler(1, token_str)
+            Program()
+        else:
+            error_handler(2, "Program")
 
 
 def Declaration_list():
@@ -228,8 +238,8 @@ def Expression_stmt():
         pass
 
 
-def Selection_stmt(token):
-    if token_str == "if"
+def Selection_stmt():
+    if token_str == "if":
         match("if")
         match("(")
         Expression()
