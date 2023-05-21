@@ -40,15 +40,11 @@ def match(input):
 
 
 def error_handler(error_type, input):
+    global is_there_any_error
+    is_there_any_error = True
     if error_type == 1:
         f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {input}\n)')
-        token = scanner.get_next_token()
-
-        if token[0] in ['KEYWORD', 'SYMBOL']:
-            token_str = token[1]
-        else:
-            token_str = token[0]
-
+        get_next_token()
     elif error_type == 2:
         f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
     elif error_type == 3:
@@ -328,8 +324,7 @@ def H():
     elif token_str in follow['H']:  # the epsilon move (derivative)
         return
     else:   # error type 1
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return H()
 
 
@@ -342,8 +337,7 @@ def Simple_expression_zegond():
         error_handler(2, 'Simple_expression_zegond')
         return
     else:
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return Simple_expression_zegond()
 
 
@@ -355,8 +349,7 @@ def Simple_expression_prime():
     elif token_str in follow['Simple_expression_prime']:  # the epsilon move  (derivative)
         return
     else:
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return Simple_expression_prime()
 
 
@@ -368,8 +361,7 @@ def C():
     elif token_str in follow['C']:  # the epsilon move
         return
     else:
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return C()
 
 
@@ -397,8 +389,7 @@ def Additive_expression():
         error_handler(2, 'Additive_expression')
         return
     elif token_str not in follow['Additive_expression']:
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return Additive_expression()
 
 
@@ -410,8 +401,7 @@ def Additive_expression_prime():
     elif token_str in follow['Additive_expression_prime']:  # the epsilon move  (derivative)
         return
     elif token_str not in follow['Additive_expression_prime']:
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return Additive_expression_prime()
 
 
@@ -424,8 +414,7 @@ def Additive_expression_zegond():
         error_handler(2, 'Additive_expression_zegond')
         return
     elif token_str not in follow['Additive_expression_zegond']:
-        error_handler(1, '')
-        get_next_token()
+        error_handler(1, token_str)
         return Additive_expression_zegond()
 
 
@@ -435,8 +424,11 @@ def D():
         Term()
         D()
         return
-    else:  # the epsilon move
+    elif token_str in follow['D']:  # the epsilon move
         return
+    elif token_str not in follow['D']:
+        error_handler(1, token_str)
+        return D()
 
 
 def Addop():
@@ -446,7 +438,12 @@ def Addop():
     elif token_str == '-':
         match('-')
         return
-    # else panic mode
+    elif token_str in follow['Addop']:
+        error_handler(2, 'Addop')
+        return
+    else:
+        error_handler(3, '\'+\' or \'-\'')
+        return
 
 
 def Term():
@@ -454,7 +451,12 @@ def Term():
         Factor()
         G()
         return
-    # else panic mode
+    elif token_str in follow['Term']:
+        error_handler(2, 'Term')
+        return
+    elif token_str not in follow['Term']:
+        error_handler(1, token_str)
+        return Term()
 
 
 def Term_prime():
@@ -462,8 +464,11 @@ def Term_prime():
         Factor_prime()
         G()
         return
-    else:  # the epsilon move  (derivative)
+    elif token_str in follow['Term_prime']:  # the epsilon move  (derivative)
         return
+    elif token_str not in follow['Term_prime']:
+        error_handler(1, token_str)
+        return Term_prime()
 
 
 def Term_zegond():
@@ -471,7 +476,12 @@ def Term_zegond():
         Factor_zegond()
         G()
         return
-    # else panic mode
+    elif token_str in follow['Term_zegond']:
+        error_handler(2, 'Term_zegond')
+        return
+    elif token_str not in follow['Term_zegond']:
+        error_handler(1, token_str)
+        return Term_prime()
 
 
 def G():
@@ -480,8 +490,11 @@ def G():
         Factor()
         G()
         return
-    else:  # the epsilon move
+    elif token_str in follow['G']:  # the epsilon move
         return
+    elif token_str not in follow['G']:
+        error_handler(1, token_str)
+        return G()
 
 
 def Factor():
@@ -497,7 +510,12 @@ def Factor():
     elif token_str == 'NUM':
         match('NUM')
         return
-    # panic mode
+    elif token_str in follow['Factor']:
+        error_handler(2, 'Factor')
+        return
+    else:
+        error_handler(1, token_str)
+        return Factor()
 
 
 def Var_call_prime():
@@ -509,8 +527,11 @@ def Var_call_prime():
     elif token_str in first['Var_prime']:
         Var_prime()
         return
-    else:  # the epsilon move  (derivative)
+    elif token_str in follow['Var_call_prime']:  # the epsilon move  (derivative)
         return
+    elif token_str not in follow['Var_call_prime']:
+        error_handler(1, token_str)
+        return Var_call_prime()
 
 
 def Var_prime():
@@ -519,8 +540,11 @@ def Var_prime():
         Expression()
         match(']')
         return
-    else:  # the epsilon move
+    elif token_str in follow['Var_prime']:  # the epsilon move
         return
+    elif token_str not in follow['Var_prime']:
+        error_handler(1, token_str)
+        return Var_prime()
 
 
 def Factor_prime():
@@ -529,8 +553,11 @@ def Factor_prime():
         Args()
         match(')')
         return
-    else:  # the epsilon move
+    elif token_str in follow['Factor_prime']:  # the epsilon move
         return
+    elif token_str not in follow['Factor_prime']:
+        error_handler(1, token_str)
+        return Factor_prime()
 
 
 def Factor_zegond():
@@ -542,15 +569,23 @@ def Factor_zegond():
     elif token_str == 'NUM':
         match('NUM')
         return
-    # panic
+    elif token_str in follow['Factor_zegond']:
+        error_handler(2, 'Factor_zegond')
+        return
+    elif token_str not in follow['Factor_zegond']:
+        error_handler(1, token_str)
+        return Factor_zegond()
 
 
 def Args():
     if token_str in first['Arg_list']:
         Arg_list()
         return
-    else:  # the epsilon move
+    elif token_str in follow['Args']:  # the epsilon move
         return
+    elif token_str not in follow['Args']:
+        error_handler(1, token_str)
+        return Args()
 
 
 def Arg_list():
@@ -558,7 +593,12 @@ def Arg_list():
         Expression()
         Arg_list_prime()
         return
-    # panic
+    elif token_str in follow['Arg_list']:
+        error_handler(2, 'Arg_list')
+        return
+    elif token_str not in follow['Arg_list']:
+        error_handler(1, token_str)
+        return Arg_list()
 
 
 def Arg_list_prime():
@@ -569,3 +609,6 @@ def Arg_list_prime():
         return
     elif token_str in follow['Arg_list_prime']:  # the epsilon move
         return
+    elif token_str not in follow['Arg_list_prime']:
+        error_handler(1, token_str)
+        return Arg_list_prime()
