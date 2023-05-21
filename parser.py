@@ -36,20 +36,23 @@ def match(input):
     if input == token_str:
         get_next_token()
     else:
-        # error
-        pass
+        error_handler(3, input)
 
 
-def error_handler(error_type, missing):
-    global token_str, is_there_any_error
+def error_handler(error_type, input):
     if error_type == 1:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {token_str}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {input}\n)')
+        token = scanner.get_next_token()
+
+        if token[0] in ['KEYWORD', 'SYMBOL']:
+            token_str = token[1]
+        else:
+            token_str = token[0]
+
     elif error_type == 2:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
     elif error_type == 3:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {missing}\n)')
-    is_there_any_error = True
-    return
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
 
 
 def parse():
