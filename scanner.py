@@ -69,7 +69,7 @@ def id_keyword():
 
 
 def token_generator(token):
-    global in_beginning, current_token_lexeme
+    global in_beginning, current_token_lexeme, is_token_generated, generating_token
     if in_beginning:
         f_tokens.write(f"{current_line}.\t")
         in_beginning = False
@@ -81,7 +81,7 @@ def token_generator(token):
 
 
 def get_next_token():
-    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_token_generated, is_token_generated, is_token_generated
+    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_token_generated
 
     if pointer == len(code):
         if is_comment_open:

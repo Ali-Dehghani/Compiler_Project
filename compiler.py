@@ -1,3 +1,3 @@
-import scanner
+import parser
 
-scanner.scan()
+parser.parse()
