@@ -81,7 +81,7 @@ def token_generator(token):
 
 
 def get_next_token():
-    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_token_generated, is_token_generated, is_token_generated
+    global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_token_generated
 
     if pointer == len(code):
         if is_comment_open:

@@ -12,8 +12,8 @@ follow = data['follow']
 f_errors = open("syntax_errors.txt", "w")
 token = ''
 token_str = ''
-state = '0'
-halt_program = False
+# state = '0'
+# halt_program = False
 # get_new_token = True
 is_there_any_error = False
 
@@ -30,7 +30,6 @@ def get_next_token():
     return
 
 
-
 def match(input):
     global token_str, token
     if input == token_str:
@@ -43,16 +42,16 @@ def error_handler(error_type, input):
     global is_there_any_error
     is_there_any_error = True
     if error_type == 1:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {input}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {input})\n')
         get_next_token()
     elif error_type == 2:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input})\n')
     elif error_type == 3:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input}\n)')
+        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input})\n')
 
 
 def parse():
-    global terminals, non_terminals, first, follow, token, get_new_token, token_str
+    global terminals, non_terminals, first, follow, token, token_str, is_there_any_error
     get_next_token()
     Program()
     if not is_there_any_error:
@@ -60,22 +59,31 @@ def parse():
     f_errors.close()
 
 
+def handle(non_terminal_str, non_terminal_func):
+    if token_str not in follow[non_terminal_str]:
+        error_handler(1, token_str)
+        non_terminal_func()
+    else:
+        error_handler(2, non_terminal_str)
+
+
 def Program():
     if token_str in first["Declaration-list"]:
         Declaration_list()
     else:
         # error
-        pass
+        handle("Program", Program)
 
 
 def Declaration_list():
     if token_str in first["Declaration"]:
         Declaration()
-    elif token_str in follow["Declaration-list"]:
+        Declaration_list()
+    elif token_str in follow["Declaration-list"]:  # for epsilon
         pass
     else:
         # error
-        pass
+        handle("Declaration-list", Declaration_list)
 
 
 def Declaration():
@@ -84,16 +92,16 @@ def Declaration():
         Declaration_prime()
     else:
         # error
-        pass
+        handle("Declaration", Declaration)
 
 
 def Declaration_initial():
-    if token_str in first["Type_specifier"]:
+    if token_str in first["Type-specifier"]:
         Type_specifier()
         match("ID")
     else:
         # error
-        pass
+        handle("Declaration-initial", Declaration_initial)
 
 
 def Declaration_prime():
@@ -103,7 +111,7 @@ def Declaration_prime():
         Var_declaration_prime()
     else:
         # error
-        pass
+        handle("Declaration-prime", Declaration_prime)
 
 
 def Var_declaration_prime():
@@ -116,7 +124,7 @@ def Var_declaration_prime():
         match(";")
     else:
         # error
-        pass
+        handle("Var-declaration-prime", Var_declaration_prime)
 
 
 def Fun_declaration_prime():
@@ -127,7 +135,7 @@ def Fun_declaration_prime():
         Compound_stmt()
     else:
         # error
-        pass
+        handle("Fun-declaration-prime", Fun_declaration_prime)
 
 
 def Type_specifier():
@@ -137,7 +145,7 @@ def Type_specifier():
         match("void")
     else:
         # error
-        pass
+        handle("Type-specifier", Type_specifier)
 
 
 def Params():
@@ -150,7 +158,7 @@ def Params():
         match("void")
     else:
         # error
-        pass
+        handle("Params", Params)
 
 
 def Param_list():
@@ -162,7 +170,7 @@ def Param_list():
         pass
     else:
         # error
-        pass
+        handle("Param-list", Param_list)
 
 
 def Param():
@@ -171,18 +179,18 @@ def Param():
         Param_prime()
     else:
         # error
-        pass
+        handle("Param", Param)
 
 
 def Param_prime():
     if token_str == "[":
         match("[")
         match("]")
-    elif token_str in follow["Param-prime"]:
+    elif token_str in follow["Param-prime"]:  # for epsilon
         pass
     else:
         # error
-        pass
+        handle("Params-prime", Param_prime)
 
 
 def Compound_stmt():
@@ -193,18 +201,18 @@ def Compound_stmt():
         match("}")
     else:
         # error
-        pass
+        handle("Compound-stmt", Compound_stmt)
 
 
 def Statement_list():
     if token_str in first["Statement"]:
         Statement()
         Statement_list()
-    elif token_str in follow["Statement-list"]:
+    elif token_str in follow["Statement-list"]:  # for epsilon
         pass
     else:
         # error
-        pass
+        handle("Statement-list", Statement_list)
 
 
 def Statement():
@@ -220,7 +228,7 @@ def Statement():
         Return_stmt()
     else:
         # error
-        pass
+        handle("Statement", Statement)
 
 
 def Expression_stmt():
@@ -234,7 +242,7 @@ def Expression_stmt():
         match(";")
     else:
         # error
-        pass
+        handle("Expression-stmt", Expression_stmt)
 
 
 def Selection_stmt():
@@ -248,7 +256,7 @@ def Selection_stmt():
         Statement()
     else:
         # error
-        pass
+        handle("Selection-stmt", Selection_stmt)
 
 
 def Iteration_stmt():
@@ -261,7 +269,7 @@ def Iteration_stmt():
         match(")")
     else:
         # error
-        pass
+        handle("Iteration-stmt", Iteration_stmt)
 
 
 def Return_stmt():
@@ -270,7 +278,7 @@ def Return_stmt():
         Return_stmt_prime()
     else:
         # error
-        pass
+        handle("Return-stmt", Return_stmt)
 
 
 def Return_stmt_prime():
@@ -281,7 +289,7 @@ def Return_stmt_prime():
         match(";")
     else:
         # error
-        pass
+        handle("Return-stmt-prime", Return_stmt_prime)
 
 
 def Expression():
@@ -292,22 +300,23 @@ def Expression():
         B()
     else:
         # error
-        pass
+        handle("Expression", Expression)
 
 
 def B():
-    if token_str == "=":
+    if token_str == '=':
+        match("=")
+        Expression()
+    elif token_str == '[':
         match("[")
         Expression()
         match("]")
         H()
-    elif token_str in first["Expression"]:
-        Expression()
     elif token_str in first["Simple-expression-prime"]:
         Simple_expression_prime()
     else:
         # error
-        pass
+        handle("B", B)
 
 
 def H():
