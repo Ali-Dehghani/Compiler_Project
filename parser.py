@@ -19,14 +19,21 @@ get_new_token = True
 stack = ['']
 
 
+def get_next_token():
+    global token_str, token
+    token = scanner.get_next_token()
+    if token[0] in ['KEYWORD', 'SYMBOL']:
+        token_str = token[1]
+    else:
+        token_str = token[0]
+    return
+
+
+
 def match(input):
-    global token_str
+    global token_str, token
     if input == token_str:
-        token = scanner.get_next_token()
-        if token[0] in ['KEYWORD', 'SYMBOL']:
-            token_str = token[1]
-        else:
-            token_str = token[0]
+        get_next_token()
     else:
         # error
         pass
@@ -312,8 +319,11 @@ def H():
         D()
         C()
         return
-    else:  # the epsilon move (derivative)
+    elif token_str in follow['H']:  # the epsilon move (derivative)
         return
+    else:   # error type 1
+        error_handler(1, '')
+
 
 
 def Simple_expression_zegond():
@@ -322,10 +332,9 @@ def Simple_expression_zegond():
         C()
         return
     elif token_str in follow['Simple_expression_zegond']:
-        pass
-
-
-# dzf
+        error_handler(2, 'Simple_expression_zegond')
+    else:
+        error_handler(1, '')
 
 
 def Simple_expression_prime():
@@ -333,8 +342,10 @@ def Simple_expression_prime():
         Additive_expression_prime()
         C()
         return
-    else:  # the epsilon move  (derivative)
+    elif token_str in follow['Simple_expression_prime']:  # the epsilon move  (derivative)
         return
+    else:
+        error_handler(1, '')
 
 
 def C():
@@ -342,8 +353,10 @@ def C():
         Relop()
         Additive_expression()
         return
-    else:  # the epsilon move
+    elif token_str in follow['C']:  # the epsilon move
         return
+    else:
+        error_handler(1, '')
 
 
 def Relop():
@@ -353,7 +366,9 @@ def Relop():
     elif token_str == '==':
         match('==')
         return
-    # else panic mode
+    elif token_str in follow['Relop']:
+        error_handler(2, 'Relop')
+    elif token_str not
 
 
 def Additive_expression():
@@ -519,5 +534,5 @@ def Arg_list_prime():
         Expression()
         Arg_list_prime()
         return
-    else:  # the epsilon move
+    elif token_str in follow['Arg_list_prime']:  # the epsilon move
         return
