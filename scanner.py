@@ -74,7 +74,6 @@ def token_generator(token):
         f_tokens.write(f"{current_line}.\t")
         in_beginning = False
     f_tokens.write(f'({token}, {current_token_lexeme}) ')
-
     # new
     is_token_generated = True
     generating_token = [token, current_token_lexeme]
@@ -83,19 +82,21 @@ def token_generator(token):
 def get_next_token():
     global pointer, current_token_lexeme, current_line, comment_line, state, symbols, whitespaces, code, is_comment_open, in_beginning, in_beginning_error, in_beginning_error_comment, is_token_generated
 
-    if pointer == len(code):
+    if pointer == len(code)-1:
         if is_comment_open:
             error_handler(2)
         if no_error:
             f_errors.write("There is no lexical error.")
+        pointer += 1
+        is_token_generated = False
         return ['$', '$']
 
-    if (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
+    if pointer < len(code) and (not is_comment_open) and (code[pointer] not in valid_symbols) and (not code[pointer].isalnum()):
         current_token_lexeme += code[pointer]
         error_handler(1)
         pointer += 1
         state = 0
-    else:
+    elif pointer < len(code):
         if state == 0:  # finding the path ahead
             if code[pointer].isdigit():
                 current_token_lexeme += code[pointer]
@@ -223,12 +224,11 @@ def get_next_token():
                 state = 0
             else:
                 state = 11
-
     # new
     if is_token_generated:
         is_token_generated = False
         return generating_token
-    else:
+    elif pointer < len(code):
         return get_next_token()
 
 

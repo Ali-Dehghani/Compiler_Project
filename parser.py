@@ -30,24 +30,32 @@ def get_next_token():
     return
 
 
-def match(input):
+def match(match_input):
     global token_str, token
-    if input == token_str:
+    if match_input == token_str:  # token is parsed
         get_next_token()
     else:
-        error_handler(3, input)
+        error_handler(3, match_input)
+
+
+def handle(non_terminal_str, non_terminal_func):
+    if token_str not in follow[non_terminal_str]:
+        error_handler(1, token_str)
+        get_next_token()
+        non_terminal_func()
+    elif token_str in follow[non_terminal_str]:
+        error_handler(2, non_terminal_str)
 
 
 def error_handler(error_type, input):
     global is_there_any_error
     is_there_any_error = True
     if error_type == 1:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, illegal {input})\n')
-        get_next_token()
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, illegal {input}\n')
     elif error_type == 2:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input})\n')
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, missing {input}\n')
     elif error_type == 3:
-        f_errors.write(f'(#{scanner.get_current_line()} : syntax error, missing {input})\n')
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, missing {input}\n')
 
 
 def parse():
@@ -57,266 +65,241 @@ def parse():
     if not is_there_any_error:
         f_errors.write(f'There is no syntax error.')
     f_errors.close()
-
-
-def handle(non_terminal_str, non_terminal_func):
-    if token_str not in follow[non_terminal_str]:
-        error_handler(1, token_str)
-        non_terminal_func()
-    else:
-        error_handler(2, non_terminal_str)
+    return
 
 
 def Program():
-    if token_str in first["Declaration-list"]:
+    if token_str == '$':
+        return  # end of program
+    elif token_str in (first['Declaration_list'] + follow['Program']):    # epsilon move (derivative)
         Declaration_list()
-    else:
-        # error
-        handle("Program", Program)
+    else:   # error
+        handle('Program', Program)
 
 
 def Declaration_list():
-    if token_str in first["Declaration"]:
+    if token_str == '$':
+        return  # end of program
+    elif token_str in first['Declaration']:
         Declaration()
         Declaration_list()
-    elif token_str in follow["Declaration-list"]:  # for epsilon
-        pass
-    else:
-        # error
-        handle("Declaration-list", Declaration_list)
+    elif token_str in follow['Declaration_list']:  # epsilon move
+        return
+    else:   # error
+        handle('Declaration_list', Declaration_list)
 
 
 def Declaration():
-    if token_str in first["Declaration-initial"]:
+    if token_str in first['Declaration_initial']:
         Declaration_initial()
         Declaration_prime()
-    else:
-        # error
-        handle("Declaration", Declaration)
+    else:   # error
+        handle('Declaration', Declaration)
 
 
 def Declaration_initial():
-    if token_str in first["Type-specifier"]:
+    if token_str in first['Type_specifier']:
         Type_specifier()
-        match("ID")
-    else:
-        # error
-        handle("Declaration-initial", Declaration_initial)
+        match('ID')
+    else:   # error
+        handle('Declaration_initial', Declaration_initial)
 
 
 def Declaration_prime():
-    if token_str in first["Fun-declaration-prime"]:
+    if token_str in first['Fun_declaration_prime']:
         Fun_declaration_prime()
-    elif token_str in first["Var-declaration-prime"]:
+    elif token_str in first['Var_declaration_prime']:
         Var_declaration_prime()
-    else:
-        # error
-        handle("Declaration-prime", Declaration_prime)
+    else:   # error
+        handle('Declaration_prime', Declaration_prime)
 
 
 def Var_declaration_prime():
-    if token_str == "[":
-        match("[")
-        match("NUM")
-        match("]")
-        match(";")
-    elif token_str == ";":
-        match(";")
-    else:
-        # error
-        handle("Var-declaration-prime", Var_declaration_prime)
+    if token_str == '[':
+        match('[')
+        match('NUM')
+        match(']')
+        match(';')
+    elif token_str == ';':
+        match(';')
+    else:   # error
+        handle('Var_declaration_prime', Var_declaration_prime)
 
 
 def Fun_declaration_prime():
-    if token_str == "(":
-        match("(")
+    if token_str == '(':
+        match('(')
         Params()
-        match(")")
+        match(')')
         Compound_stmt()
-    else:
-        # error
-        handle("Fun-declaration-prime", Fun_declaration_prime)
+    else:   # error
+        handle('Fun_declaration_prime', Fun_declaration_prime)
 
 
 def Type_specifier():
-    if token_str == "int":
-        match("int")
-    elif token_str == "void":
-        match("void")
-    else:
-        # error
-        handle("Type-specifier", Type_specifier)
+    if token_str == 'int':
+        match('int')
+    elif token_str == 'void':
+        match('void')
+    else:   # error
+        handle('Type_specifier', Type_specifier)
 
 
 def Params():
-    if token_str == "int":
-        match("int")
-        match("ID")
+    if token_str == 'int':
+        match('int')
+        match('ID')
         Param_prime()
         Param_list()
-    elif token_str == "void":
-        match("void")
-    else:
-        # error
-        handle("Params", Params)
+    elif token_str == 'void':
+        match('void')
+    else:   # error
+        handle('Params', Params)
 
 
 def Param_list():
-    if token_str == ",":
-        match(",")
+    if token_str == ',':
+        match(',')
         Param()
         Param_list()
-    elif token_str in follow["Param-list"]:
-        pass
-    else:
-        # error
-        handle("Param-list", Param_list)
+    elif token_str in follow["Param_list"]:     # epsilon move
+        return
+    else:   # error
+        handle('Param_list', Param_list)
 
 
 def Param():
-    if token_str in first["Declaration-initial"]:
+    if token_str in first['Declaration_initial']:
         Declaration_initial()
         Param_prime()
-    else:
-        # error
-        handle("Param", Param)
+    else:   # error
+        handle('Param', Param)
 
 
 def Param_prime():
-    if token_str == "[":
-        match("[")
-        match("]")
-    elif token_str in follow["Param-prime"]:  # for epsilon
-        pass
-    else:
-        # error
-        handle("Params-prime", Param_prime)
+    if token_str == '[':
+        match('[')
+        match(']')
+    elif token_str in follow['Param_prime']:  # epsilon move
+        return
+    else:   # error
+        handle('Params_prime', Param_prime)
 
 
 def Compound_stmt():
-    if token_str == "{":
-        match("{")
+    if token_str == '{':
+        match('{')
         Declaration_list()
         Statement_list()
-        match("}")
-    else:
-        # error
-        handle("Compound-stmt", Compound_stmt)
+        match('}')
+    else:   # error
+        handle('Compound_stmt', Compound_stmt)
 
 
 def Statement_list():
-    if token_str in first["Statement"]:
+    if token_str in first['Statement']:
         Statement()
         Statement_list()
-    elif token_str in follow["Statement-list"]:  # for epsilon
-        pass
-    else:
-        # error
-        handle("Statement-list", Statement_list)
+    elif token_str in follow['Statement_list']:  # epsilon move
+        return
+    else:   # error
+        handle('Statement_list', Statement_list)
 
 
 def Statement():
-    if token_str in first["Expression-stmt"]:
+    if token_str in first['Expression_stmt']:
         Expression_stmt()
-    elif token_str in first["Compound-stmt"]:
+    elif token_str in first['Compound_stmt']:
         Compound_stmt()
-    elif token_str in first["Selection-stmt"]:
+    elif token_str in first['Selection_stmt']:
         Selection_stmt()
-    elif token_str in first["Iteration-stmt"]:
+    elif token_str in first['Iteration_stmt']:
         Iteration_stmt()
-    elif token_str in first["Return-stmt"]:
+    elif token_str in first['Return_stmt']:
         Return_stmt()
-    else:
-        # error
-        handle("Statement", Statement)
+    else:   # error
+        handle('Statement', Statement)
 
 
 def Expression_stmt():
-    if token_str in first["Expression"]:
+    if token_str in first['Expression']:
         Expression()
-        match(";")
-    elif token_str == "break":
-        match("break")
-        match(";")
-    elif token_str == ";":
-        match(";")
-    else:
-        # error
-        handle("Expression-stmt", Expression_stmt)
+        match(';')
+    elif token_str == 'break':
+        match('break')
+        match(';')
+    elif token_str == ';':
+        match(';')
+    else:   # error
+        handle('Expression_stmt', Expression_stmt)
 
 
 def Selection_stmt():
-    if token_str == "if":
-        match("if")
-        match("(")
+    if token_str == 'if':
+        match('if')
+        match('(')
         Expression()
-        match(")")
+        match(')')
         Statement()
-        match("else")
+        match('else')
         Statement()
-    else:
-        # error
-        handle("Selection-stmt", Selection_stmt)
+    else:   # error
+        handle('Selection_stmt', Selection_stmt)
 
 
 def Iteration_stmt():
-    if token_str == "repeat":
-        match("repeat")
+    if token_str == 'repeat':
+        match('repeat')
         Statement()
-        match("until")
-        match("(")
+        match('until')
+        match('(')
         Expression()
-        match(")")
-    else:
-        # error
-        handle("Iteration-stmt", Iteration_stmt)
+        match(')')
+    else:   # error
+        handle('Iteration_stmt', Iteration_stmt)
 
 
 def Return_stmt():
-    if token_str == "return":
-        match("return")
+    if token_str == 'return':
+        match('return')
         Return_stmt_prime()
-    else:
-        # error
-        handle("Return-stmt", Return_stmt)
+    else:   # error
+        handle('Return_stmt', Return_stmt)
 
 
 def Return_stmt_prime():
-    if token_str == ";":
-        match(";")
-    elif token_str in first["Expression"]:
+    if token_str == ';':
+        match(';')
+    elif token_str in first['Expression']:
         Expression()
-        match(";")
-    else:
-        # error
-        handle("Return-stmt-prime", Return_stmt_prime)
+        match(';')
+    else:   # error
+        handle('Return_stmt_prime', Return_stmt_prime)
 
 
 def Expression():
-    if token_str in first["Simple-expression-zegond"]:
+    if token_str in first['Simple_expression_zegond']:
         Simple_expression_zegond()
     elif token_str == "ID":
-        match("ID")
+        match('ID')
         B()
-    else:
-        # error
-        handle("Expression", Expression)
+    else:   # error
+        handle('Expression', Expression)
 
 
 def B():
     if token_str == '=':
-        match("=")
+        match('=')
         Expression()
     elif token_str == '[':
-        match("[")
+        match('[')
         Expression()
-        match("]")
+        match(']')
         H()
-    elif token_str in first["Simple-expression-prime"]:
+    elif token_str in (first['Simple_expression_prime'] + follow['B']):     # epsilon move (derivative)
         Simple_expression_prime()
-    else:
-        # error
-        handle("B", B)
+    else:   # error
+        handle('B', B)
 
 
 def H():
@@ -325,14 +308,13 @@ def H():
         match('=')
         Expression()
         return
-    elif token_str in (first['G'] + first['D'] + first['C']) or token_str in follow['H']:  # the epsilon move (derivative)
+    elif token_str in (first['G'] + first['D'] + first['C'] + follow['H']):  # the epsilon move (derivative)
         G()
         D()
         C()
         return
-    elif token_str not in follow['H']:
-        error_handler(1, token_str)
-        return H()
+    else:   # error
+        handle('H', H())
 
 
 def Simple_expression_zegond():
@@ -340,22 +322,17 @@ def Simple_expression_zegond():
         Additive_expression_zegond()
         C()
         return
-    elif token_str in follow['Simple_expression_zegond']:
-        error_handler(2, 'Simple_expression_zegond')
-        return
-    else:
-        error_handler(1, token_str)
-        return Simple_expression_zegond()
+    else:   # error
+        handle('Simple_expression_zegond', Simple_expression_zegond())
 
 
 def Simple_expression_prime():
-    if token_str in (first['Additive_expression_prime'] + first['C']) or token_str in follow['Simple_expression_prime']:  # the epsilon move  (derivative)
+    if token_str in (first['Additive_expression_prime'] + first['C'] + follow['Simple_expression_prime']):  # the epsilon move  (derivative)
         Additive_expression_prime()
         C()
         return
-    elif token_str not in follow['Simple_expression_prime']:
-        error_handler(1, token_str)
-        return Simple_expression_prime()
+    else:
+        handle('Simple_expression_prime', Simple_expression_prime)
 
 
 def C():
@@ -366,8 +343,7 @@ def C():
     elif token_str in follow['C']:  # the epsilon move
         return
     else:
-        error_handler(1, token_str)
-        return C()
+        handle('C', C)
 
 
 def Relop():
@@ -377,9 +353,8 @@ def Relop():
     elif token_str == '==':
         match('==')
         return
-    elif token_str in follow['Relop']:
-        error_handler(2, 'Relop')
-        return
+    else:
+        handle('Relop', Relop)
 
 
 def Additive_expression():
@@ -387,12 +362,8 @@ def Additive_expression():
         Term()
         D()
         return
-    elif token_str in follow['Additive_expression']:
-        error_handler(2, 'Additive_expression')
-        return
-    elif token_str not in follow['Additive_expression']:
-        error_handler(1, token_str)
-        return Additive_expression()
+    else:
+        handle('Additive_expression', Additive_expression)
 
 
 def Additive_expression_prime():
@@ -400,9 +371,8 @@ def Additive_expression_prime():
         Term_prime()
         D()
         return
-    elif token_str not in follow['Additive_expression_prime']:
-        error_handler(1, token_str)
-        return Additive_expression_prime()
+    else:
+        handle('Additive_expression_prime', Additive_expression_prime)
 
 
 def Additive_expression_zegond():
@@ -410,12 +380,8 @@ def Additive_expression_zegond():
         Term_zegond()
         D()
         return
-    elif token_str in follow['Additive_expression_zegond']:
-        error_handler(2, 'Additive_expression_zegond')
-        return
-    elif token_str not in follow['Additive_expression_zegond']:
-        error_handler(1, token_str)
-        return Additive_expression_zegond()
+    else:
+        handle('Additive_expression_zegond', Additive_expression_zegond)
 
 
 def D():
@@ -426,9 +392,8 @@ def D():
         return
     elif token_str in follow['D']:  # the epsilon move
         return
-    elif token_str not in follow['D']:
-        error_handler(1, token_str)
-        return D()
+    else:
+        handle('D', D)
 
 
 def Addop():
@@ -438,9 +403,8 @@ def Addop():
     elif token_str == '-':
         match('-')
         return
-    elif token_str in follow['Addop']:
-        error_handler(2, 'Addop')
-        return
+    else:
+        handle('Addop', Addop)
 
 
 def Term():
@@ -448,22 +412,17 @@ def Term():
         Factor()
         G()
         return
-    elif token_str in follow['Term']:
-        error_handler(2, 'Term')
-        return
-    elif token_str not in follow['Term']:
-        error_handler(1, token_str)
-        return Term()
+    else:
+        handle('Term', Term)
 
 
 def Term_prime():
-    if (token_str in (first['Factor_prime'] + first['G'])) or (token_str in follow['Term_prime']):  # the epsilon move  (derivative)
+    if token_str in (first['Factor_prime'] + first['G'] + follow['Term_prime']):  # the epsilon move  (derivative)
         Factor_prime()
         G()
         return
-    elif token_str not in follow['Term_prime']:
-        error_handler(1, token_str)
-        return Term_prime()
+    else:
+        handle('Term_prime', Term_prime)
 
 
 def Term_zegond():
@@ -471,12 +430,8 @@ def Term_zegond():
         Factor_zegond()
         G()
         return
-    elif token_str in follow['Term_zegond']:
-        error_handler(2, 'Term_zegond')
-        return
-    elif token_str not in follow['Term_zegond']:
-        error_handler(1, token_str)
-        return Term_prime()
+    else:
+        handle('Term_zegond', Term_zegond)
 
 
 def G():
@@ -487,9 +442,8 @@ def G():
         return
     elif token_str in follow['G']:  # the epsilon move
         return
-    elif token_str not in follow['G']:
-        error_handler(1, token_str)
-        return G()
+    else:
+        handle('G', G)
 
 
 def Factor():
@@ -498,19 +452,15 @@ def Factor():
         Expression()
         match(')')
         return
-    elif token_str == 'ID':
+    elif token_str == "ID":
         match('ID')
         Var_call_prime()
         return
     elif token_str == 'NUM':
         match('NUM')
         return
-    elif token_str in follow['Factor']:
-        error_handler(2, 'Factor')
-        return
     else:
-        error_handler(1, token_str)
-        return Factor()
+        handle('Factor', Factor)
 
 
 def Var_call_prime():
@@ -522,9 +472,8 @@ def Var_call_prime():
     elif token_str in (first['Var_prime'] + follow['Var_call_prime']):  # the epsilon move  (derivative)
         Var_prime()
         return
-    elif token_str not in follow['Var_call_prime']:
-        error_handler(1, token_str)
-        return Var_call_prime()
+    else:
+        handle('Var_call_prime', Var_call_prime)
 
 
 def Var_prime():
@@ -535,9 +484,8 @@ def Var_prime():
         return
     elif token_str in follow['Var_prime']:  # the epsilon move
         return
-    elif token_str not in follow['Var_prime']:
-        error_handler(1, token_str)
-        return Var_prime()
+    else:
+        handle('Var_prime', Var_prime)
 
 
 def Factor_prime():
@@ -548,9 +496,8 @@ def Factor_prime():
         return
     elif token_str in follow['Factor_prime']:  # the epsilon move
         return
-    elif token_str not in follow['Factor_prime']:
-        error_handler(1, token_str)
-        return Factor_prime()
+    else:
+        handle('Factor_prime', Factor_prime)
 
 
 def Factor_zegond():
@@ -562,12 +509,8 @@ def Factor_zegond():
     elif token_str == 'NUM':
         match('NUM')
         return
-    elif token_str in follow['Factor_zegond']:
-        error_handler(2, 'Factor_zegond')
-        return
-    elif token_str not in follow['Factor_zegond']:
-        error_handler(1, token_str)
-        return Factor_zegond()
+    else:
+        handle('Factor_zegond', Factor_zegond)
 
 
 def Args():
@@ -576,9 +519,8 @@ def Args():
         return
     elif token_str in follow['Args']:  # the epsilon move
         return
-    elif token_str not in follow['Args']:
-        error_handler(1, token_str)
-        return Args()
+    else:
+        handle('Args', Args)
 
 
 def Arg_list():
@@ -586,12 +528,8 @@ def Arg_list():
         Expression()
         Arg_list_prime()
         return
-    elif token_str in follow['Arg_list']:
-        error_handler(2, 'Arg_list')
-        return
-    elif token_str not in follow['Arg_list']:
-        error_handler(1, token_str)
-        return Arg_list()
+    else:
+        handle('Arg_list', Arg_list)
 
 
 def Arg_list_prime():
@@ -602,6 +540,5 @@ def Arg_list_prime():
         return
     elif token_str in follow['Arg_list_prime']:  # the epsilon move
         return
-    elif token_str not in follow['Arg_list_prime']:
-        error_handler(1, token_str)
-        return Arg_list_prime()
+    else:
+        handle('Arg_list_prime', Arg_list_prime)
