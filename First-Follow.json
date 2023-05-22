@@ -210,22 +210,22 @@
       "$"
     ],
     "Declaration_list": [
-      "Id", ";", "NUM", "(", "{", "}", "break", "if", "repeat", "return", "$"
+      "ID", ";", "NUM", "(", "{", "}", "break", "if", "repeat", "return", "$"
     ],
     "Declaration": [
-      "Id", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
+      "ID", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
     ],
     "Declaration_initial": [
       ";", "[", "(", ")", ","
     ],
     "Declaration_prime": [
-      "Id", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
+      "ID", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
     ],
     "Var_declaration_prime": [
-      "Id", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
+      "ID", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
     ],
     "Fun_declaration_prime": [
-      "Id", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
+      "ID", ";", "NUM", "(", "int", "void", "{", "}", "break", "if", "repeat", "return", "$"
     ],
     "Type_specifier": [
       "ID"
