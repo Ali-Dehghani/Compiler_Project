@@ -30,8 +30,11 @@ def get_next_token():
 
 def match(match_input):
     global token_str, token
-    if match_input == token_str:  # token is parsed
+    if match_input == '$':
+        f_parse_tree.write(f'Node: {token_str}     lineage: \'Program\'\n')
+    elif match_input == token_str:  # token is parsed
         # token's address in tree is in stack
+        f_parse_tree.write(f'Node: {token}     lineage: {stack}\n')
         get_next_token()
     else:
         error_handler(3, match_input)
@@ -80,6 +83,7 @@ def parse():
 def Program():
     stack.append('Program')
     if token_str == '$':
+        match('$')
         stack.pop()
         return  # end of program
     elif token_str in (first['Declaration_list'] + follow['Program']):    # epsilon move (derivative)
@@ -92,14 +96,15 @@ def Program():
 
 def Declaration_list():
     stack.append('Declaration_list')
-    if token_str == '$':
-        stack.pop()
-        return  # end of program
-    elif token_str in first['Declaration']:
+    if token_str in first['Declaration']:
         Declaration()
         Declaration_list()
         stack.pop()
     elif token_str in follow['Declaration_list']:   # epsilon move
+        if token_str == '$':
+            match('$')
+            stack.pop()
+            return  # end of program
         stack.pop()
         return
     else:   # error
