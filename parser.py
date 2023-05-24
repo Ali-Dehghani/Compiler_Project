@@ -6,8 +6,6 @@ f_json = open('First-Follow.json')
 data = json.load(f_json)
 f_json.close()
 
-terminals = data['terminals']
-non_terminals = data['non_terminals']
 first = data['first']
 follow = data['follow']
 f_errors = open("syntax_errors.txt", "w")
@@ -33,19 +31,19 @@ def match(match_input):
     global token_str, token
     if match_input == '$':
         Node('$', stack[0])
-        # f_parse_tree.write(f'Node: {token_str}     lineage: \'Program\'\n')
     elif match_input == 'epsilon':
         Node('epsilon', parent=stack[-1])
     elif match_input == token_str:  # token is parsed
-        # token's address in tree is in stack
-        Node(token, parent=stack[-1])
-        # f_parse_tree.write(f'Node: {token}     lineage: {stack}\n')
+        Node("(%s, %s)" % (token[0], token[1]), parent=stack[-1])
         get_next_token()
     else:
         error_handler(3, match_input)
 
 
-def kill_program():
+def kill_program():     # unexpected EOF
+    for pre, fill, node in RenderTree(stack[0]):
+        print("%s%s" % (pre, node.name), file=f_parse_tree)
+    f_parse_tree.close()
     quit()
 
 
@@ -66,26 +64,25 @@ def error_handler(error_type, error_input):
     global is_there_any_error
     is_there_any_error = True
     if error_type == 1:
-        f_errors.write(f'#{scanner.get_current_line()} : syntax error, illegal {error_input}      {stack}\n')
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, illegal {error_input}\n')
     elif error_type == 2:
-        f_errors.write(f'#{scanner.get_current_line()} : syntax error, missing {error_input}      {stack}\n')
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, missing {error_input}\n')
     elif error_type == 3:
-        f_errors.write(f'#{scanner.get_current_line()} : syntax error, missing {error_input}      {stack}\n')
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, missing {error_input}\n')
     elif error_type == 4:
-        f_errors.write(f'#{scanner.get_current_line()} : syntax error, Unexpected EOF      {stack}\n')
+        f_errors.write(f'#{scanner.get_current_line()} : syntax error, Unexpected EOF\n')
 
 
 def parse():
-    global terminals, non_terminals, first, follow, token, token_str, is_there_any_error, parse_Tree
+    global first, follow, token, token_str, is_there_any_error, stack
     get_next_token()
     Program()
+    for pre, fill, node in RenderTree(stack[0]):
+        print("%s%s" % (pre, node.name), file=f_parse_tree)
+    f_parse_tree.close()
     if not is_there_any_error:
         f_errors.write(f'There is no syntax error.')
     f_errors.close()
-    for pre, fill, node in RenderTree(stack[0]):
-        # f_parse_tree.write("%s%s" % (pre, node.name))
-        print("%s%s" % (pre, node.name), file=f_parse_tree)
-    f_parse_tree.close()
     return
 
 
