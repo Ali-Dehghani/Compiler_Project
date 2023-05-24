@@ -1,5 +1,6 @@
 import scanner
 import json
+from anytree import Node, RenderTree
 
 f_json = open('First-Follow.json')
 data = json.load(f_json)
@@ -10,7 +11,7 @@ non_terminals = data['non_terminals']
 first = data['first']
 follow = data['follow']
 f_errors = open("syntax_errors.txt", "w")
-f_parse_tree = open("parse_tree.txt", "w")
+f_parse_tree = open("parse_tree.txt", "w", encoding='utf-8')
 token = ''
 token_str = ''
 is_there_any_error = False
@@ -31,10 +32,14 @@ def get_next_token():
 def match(match_input):
     global token_str, token
     if match_input == '$':
-        f_parse_tree.write(f'Node: {token_str}     lineage: \'Program\'\n')
+        Node('$', stack[0])
+        # f_parse_tree.write(f'Node: {token_str}     lineage: \'Program\'\n')
+    elif match_input == 'epsilon':
+        Node('epsilon', parent=stack[-1])
     elif match_input == token_str:  # token is parsed
         # token's address in tree is in stack
-        f_parse_tree.write(f'Node: {token}     lineage: {stack}\n')
+        Node(token, parent=stack[-1])
+        # f_parse_tree.write(f'Node: {token}     lineage: {stack}\n')
         get_next_token()
     else:
         error_handler(3, match_input)
@@ -71,31 +76,32 @@ def error_handler(error_type, error_input):
 
 
 def parse():
-    global terminals, non_terminals, first, follow, token, token_str, is_there_any_error
+    global terminals, non_terminals, first, follow, token, token_str, is_there_any_error, parse_Tree
     get_next_token()
     Program()
     if not is_there_any_error:
         f_errors.write(f'There is no syntax error.')
     f_errors.close()
+    for pre, fill, node in RenderTree(stack[0]):
+        # f_parse_tree.write("%s%s" % (pre, node.name))
+        print("%s%s" % (pre, node.name), file=f_parse_tree)
+    f_parse_tree.close()
     return
 
 
 def Program():
-    stack.append('Program')
+    stack.append(Node('Program', parent=None))
     if token_str == '$':
         match('$')
-        stack.pop()
         return  # end of program
     elif token_str in (first['Declaration_list'] + follow['Program']):    # epsilon move (derivative)
         Declaration_list()
-        stack.pop()
     else:   # error
-        stack.pop()
         handle('Program', Program)
 
 
 def Declaration_list():
-    stack.append('Declaration_list')
+    stack.append(Node('Declaration_list', parent=stack[-1]))
     if token_str in first['Declaration']:
         Declaration()
         Declaration_list()
@@ -105,6 +111,7 @@ def Declaration_list():
             match('$')
             stack.pop()
             return  # end of program
+        match('epsilon')
         stack.pop()
         return
     else:   # error
@@ -113,7 +120,7 @@ def Declaration_list():
 
 
 def Declaration():
-    stack.append('Declaration')
+    stack.append(Node('Declaration', parent=stack[-1]))
     if token_str in first['Declaration_initial']:
         Declaration_initial()
         Declaration_prime()
@@ -124,7 +131,7 @@ def Declaration():
 
 
 def Declaration_initial():
-    stack.append('Declaration_initial')
+    stack.append(Node('Declaration_initial', parent=stack[-1]))
     if token_str in first['Type_specifier']:
         Type_specifier()
         match('ID')
@@ -135,7 +142,7 @@ def Declaration_initial():
 
 
 def Declaration_prime():
-    stack.append('Declaration_prime')
+    stack.append(Node('Declaration_prime', parent=stack[-1]))
     if token_str in first['Fun_declaration_prime']:
         Fun_declaration_prime()
         stack.pop()
@@ -148,7 +155,7 @@ def Declaration_prime():
 
 
 def Var_declaration_prime():
-    stack.append('Var_declaration_prime')
+    stack.append(Node('Var_declaration_prime', parent=stack[-1]))
     if token_str == '[':
         match('[')
         match('NUM')
@@ -164,7 +171,7 @@ def Var_declaration_prime():
 
 
 def Fun_declaration_prime():
-    stack.append('Fun_declaration_prime')
+    stack.append(Node('Fun_declaration_prime', parent=stack[-1]))
     if token_str == '(':
         match('(')
         Params()
@@ -177,7 +184,7 @@ def Fun_declaration_prime():
 
 
 def Type_specifier():
-    stack.append('Type_specifier')
+    stack.append(Node('Type_specifier', parent=stack[-1]))
     if token_str == 'int':
         match('int')
         stack.pop()
@@ -190,7 +197,7 @@ def Type_specifier():
 
 
 def Params():
-    stack.append('Params')
+    stack.append(Node('Params', parent=stack[-1]))
     if token_str == 'int':
         match('int')
         match('ID')
@@ -206,13 +213,14 @@ def Params():
 
 
 def Param_list():
-    stack.append('Param_list')
+    stack.append(Node('Param_list', parent=stack[-1]))
     if token_str == ',':
         match(',')
         Param()
         Param_list()
         stack.pop()
     elif token_str in follow["Param_list"]:     # epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:   # error
@@ -221,7 +229,7 @@ def Param_list():
 
 
 def Param():
-    stack.append('Param')
+    stack.append(Node('Param', parent=stack[-1]))
     if token_str in first['Declaration_initial']:
         Declaration_initial()
         Param_prime()
@@ -232,12 +240,13 @@ def Param():
 
 
 def Param_prime():
-    stack.append('Param_prime')
+    stack.append(Node('Param_prime', parent=stack[-1]))
     if token_str == '[':
         match('[')
         match(']')
         stack.pop()
     elif token_str in follow['Param_prime']:  # epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:   # error
@@ -246,7 +255,7 @@ def Param_prime():
 
 
 def Compound_stmt():
-    stack.append('Compound_stmt')
+    stack.append(Node('Compound_stmt', parent=stack[-1]))
     if token_str == '{':
         match('{')
         Declaration_list()
@@ -259,12 +268,13 @@ def Compound_stmt():
 
 
 def Statement_list():
-    stack.append('Statement_list')
+    stack.append(Node('Statement_list', parent=stack[-1]))
     if token_str in first['Statement']:
         Statement()
         Statement_list()
         stack.pop()
     elif token_str in follow['Statement_list']:  # epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:   # error
@@ -273,7 +283,7 @@ def Statement_list():
 
 
 def Statement():
-    stack.append('Statement')
+    stack.append(Node('Statement', parent=stack[-1]))
     if token_str in first['Expression_stmt']:
         Expression_stmt()
         stack.pop()
@@ -295,7 +305,7 @@ def Statement():
 
 
 def Expression_stmt():
-    stack.append('Expression_stmt')
+    stack.append(Node('Expression_stmt', parent=stack[-1]))
     if token_str in first['Expression']:
         Expression()
         match(';')
@@ -313,7 +323,7 @@ def Expression_stmt():
 
 
 def Selection_stmt():
-    stack.append('Selection_stmt')
+    stack.append(Node('Selection_stmt', parent=stack[-1]))
     if token_str == 'if':
         match('if')
         match('(')
@@ -329,7 +339,7 @@ def Selection_stmt():
 
 
 def Iteration_stmt():
-    stack.append('Iteration_stmt')
+    stack.append(Node('Iteration_stmt', parent=stack[-1]))
     if token_str == 'repeat':
         match('repeat')
         Statement()
@@ -344,7 +354,7 @@ def Iteration_stmt():
 
 
 def Return_stmt():
-    stack.append('Return_stmt')
+    stack.append(Node('Return_stmt', parent=stack[-1]))
     if token_str == 'return':
         match('return')
         Return_stmt_prime()
@@ -355,7 +365,7 @@ def Return_stmt():
 
 
 def Return_stmt_prime():
-    stack.append('Return_stmt_prime')
+    stack.append(Node('Return_stmt_prime', parent=stack[-1]))
     if token_str == ';':
         match(';')
         stack.pop()
@@ -369,7 +379,7 @@ def Return_stmt_prime():
 
 
 def Expression():
-    stack.append('Expression')
+    stack.append(Node('Expression', parent=stack[-1]))
     if token_str in first['Simple_expression_zegond']:
         Simple_expression_zegond()
         stack.pop()
@@ -383,7 +393,7 @@ def Expression():
 
 
 def B():
-    stack.append('B')
+    stack.append(Node('B', parent=stack[-1]))
     if token_str == '=':
         match('=')
         Expression()
@@ -403,7 +413,7 @@ def B():
 
 
 def H():
-    stack.append('H')
+    stack.append(Node('H', parent=stack[-1]))
     if token_str == '=':
         match('=')
         Expression()
@@ -421,7 +431,7 @@ def H():
 
 
 def Simple_expression_zegond():
-    stack.append('Simple_expression_zegond')
+    stack.append(Node('Simple_expression_zegond', parent=stack[-1]))
     if token_str in first['Additive_expression_zegond']:
         Additive_expression_zegond()
         C()
@@ -433,7 +443,7 @@ def Simple_expression_zegond():
 
 
 def Simple_expression_prime():
-    stack.append('Simple_expression_prime')
+    stack.append(Node('Simple_expression_prime', parent=stack[-1]))
     if token_str in (first['Additive_expression_prime'] + first['C'] + follow['Simple_expression_prime']):
         Additive_expression_prime()
         C()
@@ -445,13 +455,14 @@ def Simple_expression_prime():
 
 
 def C():
-    stack.append('C')
+    stack.append(Node('C', parent=stack[-1]))
     if token_str in first['Relop']:
         Relop()
         Additive_expression()
         stack.pop()
         return
     elif token_str in follow['C']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
@@ -460,7 +471,7 @@ def C():
 
 
 def Relop():
-    stack.append('Relop')
+    stack.append(Node('Relop', parent=stack[-1]))
     if token_str == '<':
         match('<')
         stack.pop()
@@ -475,7 +486,7 @@ def Relop():
 
 
 def Additive_expression():
-    stack.append('Additive_expression')
+    stack.append(Node('Additive_expression', parent=stack[-1]))
     if token_str in first['Term']:
         Term()
         D()
@@ -487,7 +498,7 @@ def Additive_expression():
 
 
 def Additive_expression_prime():
-    stack.append('Additive_expression_prime')
+    stack.append(Node('Additive_expression_prime', parent=stack[-1]))
     if token_str in (first['Term_prime'] + first['D'] + follow['Additive_expression_prime']):  # epsilon move derivative
         Term_prime()
         D()
@@ -499,7 +510,7 @@ def Additive_expression_prime():
 
 
 def Additive_expression_zegond():
-    stack.append('Additive_expression_zegond')
+    stack.append(Node('Additive_expression_zegond', parent=stack[-1]))
     if token_str in first['Term_zegond']:
         Term_zegond()
         D()
@@ -511,7 +522,7 @@ def Additive_expression_zegond():
 
 
 def D():
-    stack.append('D')
+    stack.append(Node('D', parent=stack[-1]))
     if token_str in first['Addop']:
         Addop()
         Term()
@@ -519,6 +530,7 @@ def D():
         stack.pop()
         return
     elif token_str in follow['D']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
@@ -527,7 +539,7 @@ def D():
 
 
 def Addop():
-    stack.append('Addop')
+    stack.append(Node('Addop', parent=stack[-1]))
     if token_str == '+':
         match('+')
         stack.pop()
@@ -542,7 +554,7 @@ def Addop():
 
 
 def Term():
-    stack.append('Term')
+    stack.append(Node('Term', parent=stack[-1]))
     if token_str in first['Factor']:
         Factor()
         G()
@@ -554,7 +566,7 @@ def Term():
 
 
 def Term_prime():
-    stack.append('Term_prime')
+    stack.append(Node('Term_prime', parent=stack[-1]))
     if token_str in (first['Factor_prime'] + first['G'] + follow['Term_prime']):  # the epsilon move  (derivative)
         Factor_prime()
         G()
@@ -566,7 +578,7 @@ def Term_prime():
 
 
 def Term_zegond():
-    stack.append('Term_zegond')
+    stack.append(Node('Term_zegond', parent=stack[-1]))
     if token_str in first['Factor_zegond']:
         Factor_zegond()
         G()
@@ -578,7 +590,7 @@ def Term_zegond():
 
 
 def G():
-    stack.append('G')
+    stack.append(Node('G', parent=stack[-1]))
     if token_str == '*':
         match('*')
         Factor()
@@ -586,6 +598,7 @@ def G():
         stack.pop()
         return
     elif token_str in follow['G']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
@@ -594,7 +607,7 @@ def G():
 
 
 def Factor():
-    stack.append('Factor')
+    stack.append(Node('Factor', parent=stack[-1]))
     if token_str == '(':
         match('(')
         Expression()
@@ -616,7 +629,7 @@ def Factor():
 
 
 def Var_call_prime():
-    stack.append('Var_call_prime')
+    stack.append(Node('Var_call_prime', parent=stack[-1]))
     if token_str == '(':
         match('(')
         Args()
@@ -633,7 +646,7 @@ def Var_call_prime():
 
 
 def Var_prime():
-    stack.append('Var_prime')
+    stack.append(Node('Var_prime', parent=stack[-1]))
     if token_str == '[':
         match('[')
         Expression()
@@ -641,6 +654,7 @@ def Var_prime():
         stack.pop()
         return
     elif token_str in follow['Var_prime']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
@@ -649,7 +663,7 @@ def Var_prime():
 
 
 def Factor_prime():
-    stack.append('Factor_prime')
+    stack.append(Node('Factor_prime', parent=stack[-1]))
     if token_str == '(':
         match('(')
         Args()
@@ -657,6 +671,7 @@ def Factor_prime():
         stack.pop()
         return
     elif token_str in follow['Factor_prime']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
@@ -665,7 +680,7 @@ def Factor_prime():
 
 
 def Factor_zegond():
-    stack.append('Factor_zegond')
+    stack.append(Node('Factor_zegond', parent=stack[-1]))
     if token_str == '(':
         match('(')
         Expression()
@@ -682,12 +697,13 @@ def Factor_zegond():
 
 
 def Args():
-    stack.append('Args')
+    stack.append(Node('Args', parent=stack[-1]))
     if token_str in first['Arg_list']:
         Arg_list()
         stack.pop()
         return
     elif token_str in follow['Args']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
@@ -696,7 +712,7 @@ def Args():
 
 
 def Arg_list():
-    stack.append('Arg_list')
+    stack.append(Node('Arg_list', parent=stack[-1]))
     if token_str in first['Expression']:
         Expression()
         Arg_list_prime()
@@ -708,7 +724,7 @@ def Arg_list():
 
 
 def Arg_list_prime():
-    stack.append('Arg_list_prime')
+    stack.append(Node('Arg_list_prime', parent=stack[-1]))
     if token_str == ',':
         match(',')
         Expression()
@@ -716,6 +732,7 @@ def Arg_list_prime():
         stack.pop()
         return
     elif token_str in follow['Arg_list_prime']:  # the epsilon move
+        match('epsilon')
         stack.pop()
         return
     else:
