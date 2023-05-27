@@ -40,7 +40,7 @@ def match(match_input):
         error_handler(3, match_input)
 
 
-def kill_program():     # unexpected EOF
+def kill_program():  # unexpected EOF
     for pre, fill, node in RenderTree(stack[0]):
         print("%s%s" % (pre, node.name), file=f_parse_tree)
     f_parse_tree.close()
@@ -83,7 +83,6 @@ def parse():
     if not is_there_any_error:
         f_errors.write(f'There is no syntax error.')
     f_errors.close()
-    return
 
 
 def Program():
@@ -91,9 +90,9 @@ def Program():
     if token_str == '$':
         match('$')
         return  # end of program
-    elif token_str in (first['Declaration_list'] + follow['Program']):    # epsilon move (derivative)
+    elif token_str in (first['Declaration_list'] + follow['Program']):  # epsilon move (derivative)
         Declaration_list()
-    else:   # error
+    else:  # error
         handle('Program', Program)
 
 
@@ -103,7 +102,7 @@ def Declaration_list():
         Declaration()
         Declaration_list()
         stack.pop()
-    elif token_str in follow['Declaration_list']:   # epsilon move
+    elif token_str in follow['Declaration_list']:  # epsilon move
         if token_str == '$':
             match('$')
             stack.pop()
@@ -111,7 +110,7 @@ def Declaration_list():
         match('epsilon')
         stack.pop()
         return
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Declaration_list', Declaration_list)
 
@@ -122,7 +121,7 @@ def Declaration():
         Declaration_initial()
         Declaration_prime()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Declaration', Declaration)
 
@@ -133,7 +132,7 @@ def Declaration_initial():
         Type_specifier()
         match('ID')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Declaration_initial', Declaration_initial)
 
@@ -146,7 +145,7 @@ def Declaration_prime():
     elif token_str in first['Var_declaration_prime']:
         Var_declaration_prime()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Declaration_prime', Declaration_prime)
 
@@ -162,7 +161,7 @@ def Var_declaration_prime():
     elif token_str == ';':
         match(';')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Var_declaration_prime', Var_declaration_prime)
 
@@ -175,7 +174,7 @@ def Fun_declaration_prime():
         match(')')
         Compound_stmt()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Fun_declaration_prime', Fun_declaration_prime)
 
@@ -188,7 +187,7 @@ def Type_specifier():
     elif token_str == 'void':
         match('void')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Type_specifier', Type_specifier)
 
@@ -204,7 +203,7 @@ def Params():
     elif token_str == 'void':
         match('void')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Params', Params)
 
@@ -216,11 +215,11 @@ def Param_list():
         Param()
         Param_list()
         stack.pop()
-    elif token_str in follow["Param_list"]:     # epsilon move
+    elif token_str in follow["Param_list"]:  # epsilon move
         match('epsilon')
         stack.pop()
         return
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Param_list', Param_list)
 
@@ -231,7 +230,7 @@ def Param():
         Declaration_initial()
         Param_prime()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Param', Param)
 
@@ -246,7 +245,7 @@ def Param_prime():
         match('epsilon')
         stack.pop()
         return
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Param_prime', Param_prime)
 
@@ -259,7 +258,7 @@ def Compound_stmt():
         Statement_list()
         match('}')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Compound_stmt', Compound_stmt)
 
@@ -274,7 +273,7 @@ def Statement_list():
         match('epsilon')
         stack.pop()
         return
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Statement_list', Statement_list)
 
@@ -296,7 +295,7 @@ def Statement():
     elif token_str in first['Return_stmt']:
         Return_stmt()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Statement', Statement)
 
@@ -314,7 +313,7 @@ def Expression_stmt():
     elif token_str == ';':
         match(';')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Expression_stmt', Expression_stmt)
 
@@ -330,7 +329,7 @@ def Selection_stmt():
         match('else')
         Statement()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Selection_stmt', Selection_stmt)
 
@@ -345,7 +344,7 @@ def Iteration_stmt():
         Expression()
         match(')')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Iteration_stmt', Iteration_stmt)
 
@@ -356,7 +355,7 @@ def Return_stmt():
         match('return')
         Return_stmt_prime()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Return_stmt', Return_stmt)
 
@@ -370,7 +369,7 @@ def Return_stmt_prime():
         Expression()
         match(';')
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Return_stmt_prime', Return_stmt_prime)
 
@@ -384,7 +383,7 @@ def Expression():
         match('ID')
         B()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Expression', Expression)
 
@@ -401,10 +400,10 @@ def B():
         match(']')
         H()
         stack.pop()
-    elif token_str in (first['Simple_expression_prime'] + follow['B']):     # epsilon move (derivative)
+    elif token_str in (first['Simple_expression_prime'] + follow['B']):  # epsilon move (derivative)
         Simple_expression_prime()
         stack.pop()
-    else:   # error
+    else:  # error
         stack.pop()
         handle('B', B)
 
@@ -422,7 +421,7 @@ def H():
         C()
         stack.pop()
         return
-    else:   # error
+    else:  # error
         stack.pop()
         handle('H', H())
 
@@ -434,7 +433,7 @@ def Simple_expression_zegond():
         C()
         stack.pop()
         return
-    else:   # error
+    else:  # error
         stack.pop()
         handle('Simple_expression_zegond', Simple_expression_zegond())
 
